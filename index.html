@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>optimus</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔔</text></svg>">
+<link rel="icon" href="/static/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #e4e5e1;
+    --ink: #22262a;
+    --ink-soft: #62686e;
+    --rule: #c3c6c0;
+    --field: #f1f2ef;
+    --live: #2f7a4f;
+    --warn: #9a5b12;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #1c1e20;
+      --ink: #e2e3df;
+      --ink-soft: #9a9fa4;
+      --rule: #383c40;
+      --field: #25282b;
+      --live: #6cc493;
+      --warn: #e0a85a;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  main { max-width: 40rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+
+  header {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    padding-bottom: 1rem; border-bottom: 2px solid var(--ink);
+  }
+  h1 { font-size: 1.5rem; margin: 0; letter-spacing: -0.01em; flex: 1; }
+  .status { display: flex; align-items: center; gap: 0.4rem; color: var(--ink-soft); font-size: 0.9rem; }
+  .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--ink-soft); }
+  .status.live .dot { background: var(--live); }
+  .status.down .dot { background: var(--warn); }
+  button {
+    font: inherit; font-weight: 700; font-size: 0.9rem;
+    padding: 0.45rem 0.9rem; border-radius: 6px; cursor: pointer;
+    border: 2px solid var(--ink); background: var(--ink); color: var(--paper);
+  }
+  button.on { background: transparent; color: var(--ink); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button:focus-visible { outline: 3px solid var(--live); outline-offset: 2px; }
+  .hint { color: var(--warn); font-size: 0.9rem; margin: 0.75rem 0 0; }
+  .hint:empty { display: none; }
+
+  /* tabs */
+  nav { display: flex; gap: 1.5rem; margin-top: 1rem; border-bottom: 1px solid var(--rule); }
+  .tab {
+    background: none; border: none; border-radius: 0; color: var(--ink-soft);
+    padding: 0.4rem 0 0.55rem; margin-bottom: -1px; border-bottom: 3px solid transparent;
+  }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .meta { display: flex; justify-content: space-between; gap: 1rem; color: var(--ink-soft); font-size: 0.9rem; }
+  .meta .app, .meta .to { font-weight: 700; color: var(--ink); }
+  .meta .app { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .meta .app img { width: 1.2em; height: 1.2em; border-radius: 22%; flex-shrink: 0; }
+  .meta .right { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .dismiss {
+    background: none; border: none; color: var(--ink-soft);
+    padding: 0 0.25rem; font-size: 1.2rem; line-height: 1;
+  }
+  .dismiss:hover { color: var(--ink); }
+
+  #latest { padding: 1.75rem 0 2rem; border-bottom: 1px solid var(--rule); }
+  #latest .title { font-size: 1.85rem; line-height: 1.2; font-weight: 700; margin: 0.35rem 0 0; overflow-wrap: anywhere; }
+  #latest .subtitle { font-size: 1.1rem; font-weight: 700; margin: 0.35rem 0 0; }
+  #latest .body { font-size: 1.2rem; margin: 0.5rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #latest.fresh { animation: settle 1.2s ease-out; }
+  @keyframes settle { from { background: var(--rule); } to { background: transparent; } }
+
+  h2 { font-size: 1rem; color: var(--ink-soft); margin: 1.75rem 0 0; font-weight: 700; }
+  ol { list-style: none; margin: 0; padding: 0; }
+  ol li { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  ol .title { font-weight: 700; margin: 0.15rem 0 0; overflow-wrap: anywhere; }
+  ol .subtitle { margin: 0; color: var(--ink-soft); }
+  ol .body { margin: 0.15rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  .empty { padding: 2.5rem 0; color: var(--ink-soft); font-size: 1.1rem; }
+
+  /* messages */
+  .note { margin: 1.25rem 0 0; color: var(--ink-soft); font-size: 0.9rem; }
+  #sendForm { padding-top: 0.25rem; display: grid; gap: 0.35rem; }
+  #sendForm label { font-weight: 700; font-size: 0.9rem; margin-top: 0.6rem; }
+  #sendForm input, #sendForm textarea {
+    font: inherit; color: var(--ink); background: var(--field);
+    border: 2px solid var(--rule); border-radius: 6px; padding: 0.6rem 0.75rem; width: 100%;
+  }
+  #sendForm textarea { resize: vertical; min-height: 6rem; }
+  #sendForm input:focus, #sendForm textarea:focus { border-color: var(--ink); outline: none; }
+  .send-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 0.75rem; }
+  .keys { color: var(--ink-soft); font-size: 0.85rem; }
+  #sendError { color: var(--warn); margin: 0.5rem 0 0; }
+  #sendError:empty { display: none; }
+  .state { white-space: nowrap; }
+  .state.sent { color: var(--live); font-weight: 700; }
+  .state.failed, .state.expired { color: var(--warn); font-weight: 700; }
+  .reason { margin: 0.2rem 0 0; color: var(--warn); font-size: 0.9rem; }
+
+  footer { margin-top: 2rem; color: var(--ink-soft); font-size: 0.85rem; }
+
+  @media (prefers-reduced-motion: reduce) { #latest.fresh { animation: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>optimus</h1>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">connecting…</span></div>
+    <button id="alertsBtn" type="button">turn on alerts</button>
+  </header>
+  <p class="hint" id="hint"></p>
+
+  <nav role="tablist">
+    <button class="tab" role="tab" id="tab-notifs" aria-controls="notifsPanel" aria-selected="true" type="button">notifications</button>
+    <button class="tab" role="tab" id="tab-messages" aria-controls="messagesPanel" aria-selected="false" type="button">messages</button>
+  </nav>
+
+  <!-- Noptimus -->
+  <section id="notifsPanel" role="tabpanel" aria-labelledby="tab-notifs">
+    <section id="latest" hidden></section>
+    <p class="empty" id="empty">new notifs go here</p>
+    <h2 id="earlierHeading" hidden>earlier</h2>
+    <ol id="earlier"></ol>
+  </section>
+
+  <!-- Moptimus -->
+  <section id="messagesPanel" role="tabpanel" aria-labelledby="tab-messages" hidden>
+    <form id="sendForm" autocomplete="off">
+      <label for="to">to</label>
+      <input id="to" list="names" placeholder="contact name" required>
+      <datalist id="names"></datalist>
+      <label for="text">message</label>
+      <textarea id="text" maxlength="2000" required></textarea>
+      <div class="send-row">
+        <span class="keys">ctrl+enter to send</span>
+        <button id="sendBtn" type="submit">send</button>
+      </div>
+      <p id="sendError" role="alert"></p>
+    </form>
+    <h2 id="sentHeading" hidden>sent messages</h2>
+    <ol id="sentList"></ol>
+  </section>
+
+  <footer>notifications and messages show up to 8 hours</footer>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text) e.textContent = text;   // textContent, never innerHTML: bodies are untrusted
+    return e;
+  }
+
+  /* ---------------------------------------------------------------- tabs */
+
+  function showTab(name) {
+    const messages = name === "messages";
+    $("tab-notifs").setAttribute("aria-selected", String(!messages));
+    $("tab-messages").setAttribute("aria-selected", String(messages));
+    $("notifsPanel").hidden = messages;
+    $("messagesPanel").hidden = !messages;
+  }
+  $("tab-notifs").addEventListener("click", () => showTab("notifs"));
+  $("tab-messages").addEventListener("click", () => showTab("messages"));
+
+  /* ---------------------------------------------------------------- Noptimus */
+
+  const RETENTION_MS = 8 * 60 * 60 * 1000;
+
+  // App name (exactly as the server sends it) -> icon file in static/icons/
+  const APP_ICONS = {
+    "Messages": "/static/icons/messages.png",
+    "Instagram": "/static/icons/instagram.png",
+    "Gmail": "/static/icons/gmail.png",
+    "Canvas": "/static/icons/canvas.png",
+    "Phone": "/static/icons/phone.png",
+  };
+  const items = new Map();   // id -> notification
+  let lastId = 0;
+  let alertsOn = false;
+  let audioCtx = null;
+  let unseen = 0;
+
+  function add(n) {
+    if (items.has(n.id)) return false;
+    items.set(n.id, n);
+    lastId = Math.max(lastId, n.id);
+    return true;
+  }
+
+  function timeLabel(n) {
+    const d = new Date(n.received_at * 1000);
+    const mins = Math.round((Date.now() - d) / 60000);
+    const clock = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    if (mins < 1) return `${clock}, just now`;
+    if (mins < 60) return `${clock}, ${mins} min ago`;
+    return clock;
+  }
+
+  function fill(container, n) {
+    const meta = el("div", "meta");
+    const appLabel = el("span", "app");   // wrapper: icon + name stay together on the left
+    const iconPath = APP_ICONS[n.app];
+    if (iconPath) {
+      const img = document.createElement("img");
+      img.src = iconPath;
+      img.alt = "";                        // the app name is written right next to it
+      img.onerror = () => img.remove();    // missing file? just show the name
+      appLabel.append(img);
+    }
+    appLabel.append(n.app || "Notification");
+    const right = el("span", "right");
+    const dismiss = el("button", "dismiss", "×");
+    dismiss.type = "button";
+    dismiss.setAttribute("aria-label", "Dismiss notification");
+    dismiss.addEventListener("click", () => removeNotification(n.id));
+    right.append(el("span", "", timeLabel(n)), dismiss);
+    meta.append(appLabel, right);
+    container.append(meta);
+    if (n.title) container.append(el("p", "title", n.title));
+    if (n.subtitle) container.append(el("p", "subtitle", n.subtitle));
+    if (n.body) container.append(el("p", "body", n.body));
+  }
+
+  function removeNotification(id) {
+    items.delete(id);
+    render();
+  }
+
+  function render(fresh = false) {
+    const cutoff = (Date.now() - RETENTION_MS) / 1000;
+    for (const [id, n] of items) if (n.received_at < cutoff) items.delete(id);
+
+    const list = [...items.values()].sort((a, b) => b.id - a.id);
+    const latest = $("latest");
+    latest.replaceChildren();
+    $("earlier").replaceChildren();
+
+    $("empty").hidden = list.length > 0;
+    latest.hidden = list.length === 0;
+    $("earlierHeading").hidden = list.length < 2;
+
+    if (list.length) {
+      fill(latest, list[0]);
+      if (fresh) { latest.classList.remove("fresh"); void latest.offsetWidth; latest.classList.add("fresh"); }
+    }
+    for (const n of list.slice(1)) {
+      const li = el("li");
+      fill(li, n);
+      $("earlier").append(li);
+    }
+  }
+
+  async function catchUp() {
+    try {
+      const res = await fetch(`/notifications?since=${lastId}`);
+      const data = await res.json();
+      let changed = false;
+      for (const n of data) changed = add(n) || changed;
+      if (changed) render();
+    } catch (e) {
+      console.warn("Catch-up failed:", e);
+    }
+  }
+
+  function chime() {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    [880, 1320].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.2, t + i * 0.12 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.12 + 0.35);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t + i * 0.12);
+      osc.stop(t + i * 0.12 + 0.4);
+    });
+  }
+
+  function popup(n) {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    if (!document.hidden && document.hasFocus()) return;   // you're already looking at the page
+    const title = n.title ? `${n.app || "Notification"}: ${n.title}` : (n.app || "Notification");
+    const body = [n.subtitle, n.body].filter(Boolean).join("\n");
+    const note = new Notification(title, { body, tag: `noptimus-${n.id}`, icon: APP_ICONS[n.app] });
+    note.onclick = () => { window.focus(); note.close(); };
+  }
+
+  function announce(n) {
+    if (document.hidden) { unseen++; document.title = `(${unseen}) optimus`; }
+    if (!alertsOn) return;
+    chime();
+    popup(n);
+  }
+
+  function setStatus(state, text) {
+    $("status").className = `status ${state}`;
+    $("statusText").textContent = text;
+  }
+
+  $("alertsBtn").addEventListener("click", async () => {
+    if (alertsOn) {
+      alertsOn = false;
+      $("alertsBtn").textContent = "turn on alerts";
+      $("alertsBtn").classList.remove("on");
+      return;
+    }
+    audioCtx = audioCtx || new AudioContext();
+    await audioCtx.resume();
+    alertsOn = true;
+    $("alertsBtn").textContent = "alerts on";
+    $("alertsBtn").classList.add("on");
+    chime();
+
+    if (!window.isSecureContext || !("Notification" in window)) {
+      $("hint").textContent = "Sound is on. Pop-ups need the HTTPS address from tailscale serve.";
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    $("hint").textContent = perm === "granted"
+      ? ""
+      : "Sound is on. Pop-ups are blocked for this site: allow notifications in the address bar's site settings.";
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) { unseen = 0; document.title = "optimus"; }
+  });
+
+  /* ---------------------------------------------------------------- Moptimus */
+
+  const STATUS_LABELS = {
+    waiting: "waiting for phone",
+    on_phone: "sending from phone",
+    sent: "sent",
+    failed: "not sent",
+    expired: "expired, not sent",
+  };
+  let outboxTimer = null;
+
+  function clock(seconds) {
+    return new Date(seconds * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  async function loadNames() {
+    try {
+      const names = await (await fetch("/recipients")).json();
+      $("names").replaceChildren(...names.map((n) => Object.assign(document.createElement("option"), { value: n })));
+    } catch (e) { console.warn("Couldn't load names:", e); }
+  }
+
+  function renderOutbox(list) {
+    $("sentList").replaceChildren();
+    $("sentHeading").hidden = list.length === 0;
+    for (const m of list) {
+      const li = el("li");
+      const meta = el("div", "meta");
+      meta.append(el("span", "to", `to ${m.to}`), el("span", `state ${m.status}`, `${STATUS_LABELS[m.status] || m.status}, ${clock(m.updated_at)}`));
+      li.append(meta, el("p", "body", m.text));
+      if (m.reason) li.append(el("p", "reason", m.reason));
+      $("sentList").append(li);
+    }
+  }
+
+  async function refreshOutbox() {
+    clearTimeout(outboxTimer);
+    try {
+      const list = await (await fetch("/outbox")).json();
+      renderOutbox(list);
+      if (list.some((m) => m.status === "waiting" || m.status === "on_phone")) outboxTimer = setTimeout(refreshOutbox, 2000);
+    } catch (e) { console.warn("Refresh failed:", e); }
+  }
+
+  $("sendForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const to = $("to").value.trim();
+    const text = $("text").value.trim();
+    if (!to || !text) return;
+    $("sendBtn").disabled = true;
+    $("sendError").textContent = "";
+    try {
+      const res = await fetch("/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to, text }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) $("sendError").textContent = data.error || `send failed (error ${res.status})`;
+      else { $("text").value = ""; $("text").focus(); }
+    } catch (e) {
+      $("sendError").textContent = "couldn't reach the pi. is tailscale connected?";
+    } finally {
+      $("sendBtn").disabled = false;
+      refreshOutbox();
+    }
+  });
+
+  $("text").addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) $("sendForm").requestSubmit();
+  });
+
+  /* ---------------------------------------------------------------- start */
+
+  const source = new EventSource("/stream");
+  source.onopen = () => { setStatus("live", "synced"); catchUp(); };
+  source.onerror = () => setStatus("down", "reconnecting…");
+  source.onmessage = (event) => {
+    const n = JSON.parse(event.data);
+    if (add(n)) { render(true); announce(n); }
+  };
+
+  catchUp();
+  setInterval(render, 60 * 1000);   // drop expired items and refresh "min ago"
+
+  loadNames();
+  refreshOutbox();
+</script>
+</body>
+</html>
