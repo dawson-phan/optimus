@@ -107,24 +107,56 @@
 
   .empty { padding: 2.5rem 0; color: var(--ink-soft); font-size: 1.1rem; }
 
-  /* messages */
-  .note { margin: 1.25rem 0 0; color: var(--ink-soft); font-size: 0.9rem; }
-  #sendForm { padding-top: 0.25rem; display: grid; gap: 0.35rem; }
-  #sendForm label { font-weight: 700; font-size: 0.9rem; margin-top: 0.6rem; }
-  #sendForm input, #sendForm textarea {
-    font: inherit; color: var(--ink); background: var(--field);
-    border: 2px solid var(--rule); border-radius: 6px; padding: 0.6rem 0.75rem; width: 100%;
+  /* messages: inbox */
+  :root { --bubble: #2f5f9e; --bubble-text: #ffffff; }
+  @media (prefers-color-scheme: dark) { :root { --bubble: #3d6fb3; } }
+  .convos { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+  .convo {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem; align-items: center;
+    width: 100%; text-align: left; background: none; border: none; border-radius: 0;
+    border-bottom: 1px solid var(--rule); color: var(--ink); padding: 0.8rem 0.25rem; font-weight: 400;
   }
-  #sendForm textarea { resize: vertical; min-height: 6rem; }
-  #sendForm input:focus, #sendForm textarea:focus { border-color: var(--ink); outline: none; }
-  .send-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 0.75rem; }
-  .keys { color: var(--ink-soft); font-size: 0.85rem; }
-  #sendError { color: var(--warn); margin: 0.5rem 0 0; }
+  .convo:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .avatar {
+    width: 2.6rem; height: 2.6rem; border-radius: 50%; display: grid; place-items: center;
+    color: #fff; font-weight: 700; font-size: 0.95rem; flex-shrink: 0;
+  }
+  .convo .name { font-weight: 700; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .convo .preview { color: var(--ink-soft); font-size: 0.9rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .convo .when { color: var(--ink-soft); font-size: 0.8rem; align-self: start; padding-top: 0.15rem; }
+  .convo-text { min-width: 0; }
+  .note { margin: 1.25rem 0 0; color: var(--ink-soft); font-size: 0.9rem; }
+
+  /* messages: thread */
+  .thread-head { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 0 0.75rem; border-bottom: 1px solid var(--rule); }
+  .back { background: none; border: none; color: var(--ink-soft); padding: 0.25rem 0.5rem 0.25rem 0; font-weight: 400; }
+  .back:hover { color: var(--ink); }
+  .thread-head .avatar { width: 2.1rem; height: 2.1rem; font-size: 0.8rem; }
+  .thread-head h2 { margin: 0; color: var(--ink); font-size: 1.05rem; }
+  .bubbles { display: flex; flex-direction: column; gap: 0.3rem; padding: 1rem 0 0.5rem; min-height: 12rem; }
+  .bubbles .empty { padding: 2rem 0; text-align: center; font-size: 0.95rem; }
+  .stamp { align-self: center; color: var(--ink-soft); font-size: 0.75rem; margin: 0.75rem 0 0.25rem; }
+  .bubble {
+    max-width: 78%; padding: 0.5rem 0.85rem; border-radius: 1.1rem; margin: 0;
+    white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.4;
+  }
+  .bubble.out { align-self: flex-end; background: var(--bubble); color: var(--bubble-text); border-bottom-right-radius: 0.3rem; }
+  .bubble.in { align-self: flex-start; background: var(--field); border: 1px solid var(--rule); border-bottom-left-radius: 0.3rem; }
+  .bubble.pending { opacity: 0.6; }
+  .bubble.failed { background: transparent; color: var(--ink); border: 2px dashed var(--warn); }
+  .receipt { align-self: flex-end; color: var(--ink-soft); font-size: 0.75rem; margin: 0 0.25rem 0.2rem; }
+  .receipt.failed { color: var(--warn); font-weight: 700; }
+  #composer {
+    display: flex; gap: 0.5rem; align-items: flex-end; padding: 0.75rem 0 1rem; border-top: 1px solid var(--rule);
+  }
+  #composer textarea {
+    flex: 1; font: inherit; color: var(--ink); background: var(--field); resize: none;
+    border: 2px solid var(--rule); border-radius: 1.25rem; padding: 0.55rem 0.9rem; max-height: 9rem; line-height: 1.4;
+  }
+  #composer textarea:focus { border-color: var(--ink); outline: none; }
+  #composer button { border-radius: 1.25rem; }
+  #sendError { color: var(--warn); margin: 0.25rem 0 0; font-size: 0.9rem; }
   #sendError:empty { display: none; }
-  .state { white-space: nowrap; }
-  .state.sent { color: var(--live); font-weight: 700; }
-  .state.failed, .state.expired { color: var(--warn); font-weight: 700; }
-  .reason { margin: 0.2rem 0 0; color: var(--warn); font-size: 0.9rem; }
 
   footer { margin-top: 2rem; color: var(--ink-soft); font-size: 0.85rem; }
 
@@ -155,20 +187,23 @@
 
   <!-- Moptimus -->
   <section id="messagesPanel" role="tabpanel" aria-labelledby="tab-messages" hidden>
-    <form id="sendForm" autocomplete="off">
-      <label for="to">to</label>
-      <input id="to" list="names" placeholder="contact name" required>
-      <datalist id="names"></datalist>
-      <label for="text">message</label>
-      <textarea id="text" maxlength="2000" required></textarea>
-      <div class="send-row">
-        <span class="keys">ctrl+enter to send</span>
-        <button id="sendBtn" type="submit">send</button>
+    <div id="inboxView">
+      <ul class="convos" id="convos"></ul>
+    </div>
+
+    <div id="threadView" hidden>
+      <div class="thread-head">
+        <button class="back" id="backBtn" type="button" aria-label="Back to all conversations">‹ all</button>
+        <span class="avatar" id="threadAvatar" aria-hidden="true"></span>
+        <h2 id="threadName"></h2>
       </div>
+      <div class="bubbles" id="bubbles" aria-live="polite"></div>
+      <form id="composer" autocomplete="off">
+        <textarea id="text" rows="1" maxlength="2000" placeholder="message" aria-label="Message" required></textarea>
+        <button id="sendBtn" type="submit">send</button>
+      </form>
       <p id="sendError" role="alert"></p>
-    </form>
-    <h2 id="sentHeading" hidden>sent messages</h2>
-    <ol id="sentList"></ol>
+    </div>
   </section>
 
   <footer>notifications and messages show up to 8 hours</footer>
@@ -290,7 +325,7 @@
       const data = await res.json();
       let changed = false;
       for (const n of data) changed = add(n) || changed;
-      if (changed) render();
+      if (changed) { render(); renderMessages(); }
     } catch (e) {
       console.warn("Catch-up failed:", e);
     }
@@ -370,67 +405,162 @@
     failed: "not sent",
     expired: "expired, not sent",
   };
+  let contacts = [];          // allowed names from the config
+  let outbox = [];            // messages sent from here (last 8 hours)
+  let openThread = null;      // name of the conversation being shown, or null for the list
   let outboxTimer = null;
 
   function clock(seconds) {
     return new Date(seconds * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   }
 
-  async function loadNames() {
-    try {
-      const names = await (await fetch("/recipients")).json();
-      $("names").replaceChildren(...names.map((n) => Object.assign(document.createElement("option"), { value: n })));
-    } catch (e) { console.warn("Couldn't load names:", e); }
+  function avatarFor(name, node) {
+    let hash = 0;
+    for (const ch of name) hash = (hash * 31 + ch.codePointAt(0)) >>> 0;
+    node.style.background = `hsl(${hash % 360}, 38%, 42%)`;
+    node.textContent = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => [...w][0].toUpperCase()).join("");
+    return node;
   }
 
-  function renderOutbox(list) {
-    $("sentList").replaceChildren();
-    $("sentHeading").hidden = list.length === 0;
-    for (const m of list) {
+  // One conversation = what you sent from here + Messages notifications from that person
+  function threadFor(name) {
+    const sent = outbox.filter((m) => m.to === name)
+      .map((m) => ({ dir: "out", text: m.text, time: m.created_at, status: m.status, reason: m.reason }));
+    const received = [...items.values()]
+      .filter((n) => n.app === "Messages" && n.title === name && n.body)
+      .map((n) => ({ dir: "in", text: n.body, time: n.received_at }));
+    return [...sent, ...received].sort((a, b) => a.time - b.time);
+  }
+
+  function renderInbox() {
+    const rows = contacts.map((name) => {
+      const thread = threadFor(name);
+      return { name, last: thread[thread.length - 1] };
+    });
+    // Recent conversations first, then everyone else alphabetically
+    rows.sort((a, b) => (b.last?.time || 0) - (a.last?.time || 0) || a.name.localeCompare(b.name));
+
+    $("convos").replaceChildren(...rows.map(({ name, last }) => {
       const li = el("li");
-      const meta = el("div", "meta");
-      meta.append(el("span", "to", `to ${m.to}`), el("span", `state ${m.status}`, `${STATUS_LABELS[m.status] || m.status}, ${clock(m.updated_at)}`));
-      li.append(meta, el("p", "body", m.text));
-      if (m.reason) li.append(el("p", "reason", m.reason));
-      $("sentList").append(li);
-    }
+      const row = el("button", "convo");
+      row.type = "button";
+      const text = el("span", "convo-text");
+      const preview = last ? (last.dir === "out" ? `you: ${last.text}` : last.text) : "no messages yet";
+      text.append(el("span", "name", name), el("span", "preview", preview));
+      row.append(avatarFor(name, el("span", "avatar")), text, el("span", "when", last ? clock(last.time) : ""));
+      row.addEventListener("click", () => openConversation(name));
+      li.append(row);
+      return li;
+    }));
+  }
+
+  function renderThread() {
+    if (!openThread) return;
+    const box = $("bubbles");
+    const nearBottom = box.getBoundingClientRect().bottom - window.innerHeight < 120;
+    const thread = threadFor(openThread);
+    box.replaceChildren();
+    if (!thread.length) box.append(el("p", "empty", `no messages with ${openThread} in the last 8 hours`));
+
+    let lastTime = 0;
+    thread.forEach((m, i) => {
+      if (m.time - lastTime > 15 * 60) box.append(el("span", "stamp", clock(m.time)));   // gap of 15+ min
+      lastTime = m.time;
+      let cls = `bubble ${m.dir}`;
+      if (m.dir === "out" && (m.status === "waiting" || m.status === "on_phone")) cls += " pending";
+      if (m.dir === "out" && (m.status === "failed" || m.status === "expired")) cls += " failed";
+      box.append(el("p", cls, m.text));
+
+      // Status under your messages: always for problems, otherwise only on the newest one you sent
+      const isLastOut = m.dir === "out" && !thread.slice(i + 1).some((n) => n.dir === "out");
+      if (m.dir === "out" && (isLastOut || cls.includes("failed"))) {
+        const label = STATUS_LABELS[m.status] || m.status;
+        const receipt = el("span", `receipt${cls.includes("failed") ? " failed" : ""}`, m.reason ? `${label}: ${m.reason}` : label);
+        box.append(receipt);
+      }
+    });
+    if (nearBottom) window.scrollTo(0, document.body.scrollHeight);
+  }
+
+  function renderMessages() {
+    if (openThread) renderThread(); else renderInbox();
+  }
+
+  function openConversation(name) {
+    openThread = name;
+    $("inboxView").hidden = true;
+    $("threadView").hidden = false;
+    $("threadName").textContent = name;
+    avatarFor(name, $("threadAvatar"));
+    $("sendError").textContent = "";
+    renderThread();
+    window.scrollTo(0, document.body.scrollHeight);
+    $("text").focus();
+  }
+
+  function closeConversation() {
+    openThread = null;
+    $("threadView").hidden = true;
+    $("inboxView").hidden = false;
+    renderInbox();
+  }
+  $("backBtn").addEventListener("click", closeConversation);
+
+  async function loadNames() {
+    try {
+      contacts = await (await fetch("/recipients")).json();
+      renderMessages();
+    } catch (e) { console.warn("Couldn't load names:", e); }
   }
 
   async function refreshOutbox() {
     clearTimeout(outboxTimer);
     try {
-      const list = await (await fetch("/outbox")).json();
-      renderOutbox(list);
-      if (list.some((m) => m.status === "waiting" || m.status === "on_phone")) outboxTimer = setTimeout(refreshOutbox, 2000);
+      outbox = await (await fetch("/outbox")).json();
+      renderMessages();
+      if (outbox.some((m) => m.status === "waiting" || m.status === "on_phone")) outboxTimer = setTimeout(refreshOutbox, 2000);
     } catch (e) { console.warn("Refresh failed:", e); }
   }
 
-  $("sendForm").addEventListener("submit", async (event) => {
+  // Grow the message box with its text, up to the max-height in the CSS
+  function fitComposer() {
+    const t = $("text");
+    t.style.height = "auto";
+    t.style.height = `${t.scrollHeight + 4}px`;
+  }
+  $("text").addEventListener("input", fitComposer);
+
+  $("composer").addEventListener("submit", async (event) => {
     event.preventDefault();
-    const to = $("to").value.trim();
     const text = $("text").value.trim();
-    if (!to || !text) return;
+    if (!openThread || !text) return;
     $("sendBtn").disabled = true;
     $("sendError").textContent = "";
     try {
       const res = await fetch("/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to, text }),
+        body: JSON.stringify({ to: openThread, text }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) $("sendError").textContent = data.error || `send failed (error ${res.status})`;
-      else { $("text").value = ""; $("text").focus(); }
+      else { $("text").value = ""; fitComposer(); }
     } catch (e) {
       $("sendError").textContent = "couldn't reach the pi. is tailscale connected?";
     } finally {
       $("sendBtn").disabled = false;
-      refreshOutbox();
+      await refreshOutbox();
+      window.scrollTo(0, document.body.scrollHeight);
+      $("text").focus();
     }
   });
 
+  // Enter sends, Shift+Enter makes a new line
   $("text").addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) $("sendForm").requestSubmit();
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      $("composer").requestSubmit();
+    }
   });
 
   /* ---------------------------------------------------------------- start */
@@ -440,7 +570,7 @@
   source.onerror = () => setStatus("down", "reconnecting…");
   source.onmessage = (event) => {
     const n = JSON.parse(event.data);
-    if (add(n)) { render(true); announce(n); }
+    if (add(n)) { render(true); announce(n); if (n.app === "Messages") renderMessages(); }
   };
 
   catchUp();
