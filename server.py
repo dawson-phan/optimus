@@ -35,6 +35,7 @@ NTFY_URL = f"{CONFIG.get('ntfy_server', 'https://ntfy.sh').rstrip('/')}/{CONFIG[
 # Only these contact names can be texted. Empty list = anyone (not recommended).
 ALLOWED = [name.strip() for name in CONFIG.get("allowed_recipients", []) if name.strip()]
 
+
 TAILNET_RANGES = [ipaddress.ip_network("100.64.0.0/10"), ipaddress.ip_network("fd7a:115c:a1e0::/48")]
 
 app = Flask(__name__)
